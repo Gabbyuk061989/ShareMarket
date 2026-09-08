@@ -1,14 +1,25 @@
 # agent.py
 import time
+import logging
 from datetime import datetime
 import config
 from paper_broker import PaperBroker
+from zerodha_broker import ZerodhaBroker
 from strategy import check_signal
 import requests
 
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(message)s')
+
 class TradingAgent:
     def __init__(self):
-        self.broker = PaperBroker(config.WALLET_BALANCE)
+        if config.TRADING_MODE == "zerodha":
+            if not config.ZERODHA_API_KEY or not config.ZERODHA_ACCESS_TOKEN:
+                raise ValueError("ZERODHA_API_KEY and ZERODHA_ACCESS_TOKEN must be set for zerodha mode")
+            self.broker = ZerodhaBroker(config.ZERODHA_API_KEY, config.ZERODHA_ACCESS_TOKEN)
+            logging.info("🔴 LIVE TRADING MODE: Connected to Zerodha")
+        else:
+            self.broker = PaperBroker(config.WALLET_BALANCE)
+            logging.info("📄 PAPER TRADING MODE: Using mock broker")
         self.is_running = False
 
     def send_telegram(self, message):
